@@ -13,7 +13,7 @@ export default defineConfig({
     target: 'esnext',
     lib: {
       entry: path.resolve(__dirname, "src/main.ts"),
-      name: "vite-typescript-sdk",
+      name: "@viamrobotics/sdk",
       fileName: (format) => `main.${format}.js`,
     },
     rollupOptions: {

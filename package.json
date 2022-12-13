@@ -1,5 +1,5 @@
 {
-  "name": "@viamrobotics/sdk",
+  "name": "@viamrobotics/sdk-es",
   "version": "0.0.9",
   "description": "",
   "main": "./dist/main.umd.js",

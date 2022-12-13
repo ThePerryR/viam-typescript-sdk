@@ -1,12 +1,12 @@
 import type {
   DistortionParameters,
   IntrinsicParameters
-} from '../../gen/component/camera/v1/camera_pb.esm'
+} from '../../gen/component/camera/v1/camera_pb'
 
 export interface Properties {
   supportsPcd: boolean;
-  intrinsicParameters?: IntrinsicParameters.AsObject;
-  distortionParameters?: DistortionParameters.AsObject;
+  intrinsicParameters?: IntrinsicParameters;
+  distortionParameters?: DistortionParameters;
 }
 
 export enum MimeType {

@@ -19,7 +19,6 @@ buf: install install-buf
 	PATH=$(PATH_WITH_TOOLS) buf generate ${BUF_TARGET}
 	PATH=$(PATH_WITH_TOOLS) buf generate buf.build/erdaniels/gostream
 	PATH=$(PATH_WITH_TOOLS) buf generate buf.build/viamrobotics/goutils
-	cat etc/rollup_files.txt | xargs -n1 -P32 npm run rollup
 
 build: buf
 	# TODO(RSDK-870): try removing the custom `--max-old-space-size` option

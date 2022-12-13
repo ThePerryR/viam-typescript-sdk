@@ -1,17 +1,29 @@
-import { RobotServiceClient, ServiceError } from './gen/robot/v1/robot_pb_service.esm'
+import * as robotApi from './gen/robot/v1/robot_pb'
+import {
+  Code,
+  ConnectError,
+  PromiseClient,
+  createGrpcWebTransport,
+  createPromiseClient
+} from '@bufbuild/connect-web'
 import { ConnectionClosedError } from '@viamrobotics/rpc'
+import { RobotService } from './gen/robot/v1/robot_connectweb'
 import SessionTransport from './SessionTransport'
 import { grpc } from '@improbable-eng/grpc-web'
-import robotApi from './gen/robot/v1/robot_pb.esm'
 
-const timeoutBlob = new Blob([`self.onmessage = function(e) {
+const timeoutBlob = new Blob(
+  [
+    `self.onmessage = function(e) {
   setTimeout(() => self.postMessage(""), e.data);
-};`], { type: 'text/javascript' })
+};`,
+  ],
+  { type: 'text/javascript' }
+)
 
 export default class SessionManager {
   private readonly innerTransportFactory: grpc.TransportFactory
 
-  private client: RobotServiceClient
+  private client: PromiseClient<typeof RobotService>
 
   private currentSessionID = ''
   private sessionsSupported: boolean | undefined
@@ -21,11 +33,12 @@ export default class SessionManager {
 
   private startResolve: (() => void) | undefined
 
-  private startReject: ((reason: ServiceError) => void) | undefined
+  private startReject: ((reason: ConnectError) => void) | undefined
 
   constructor (serviceHost: string, transportFactory: grpc.TransportFactory) {
     this.innerTransportFactory = transportFactory
-    this.client = new RobotServiceClient(serviceHost, { transport: transportFactory })
+    const transport = createGrpcWebTransport({ baseUrl: serviceHost })
+    this.client = createPromiseClient(RobotService, transport)
   }
 
   get transportFactory () {
@@ -66,10 +79,13 @@ export default class SessionManager {
     }
 
     let worker: Worker | undefined
-    const doHeartbeat = () => {
-      const sendHeartbeatReq = new robotApi.SendSessionHeartbeatRequest()
-      sendHeartbeatReq.setId(this.currentSessionID)
-      this.client.sendSessionHeartbeat(sendHeartbeatReq, new grpc.Metadata(), (err) => {
+    const doHeartbeat = async () => {
+      const sendHeartbeatReq = new robotApi.SendSessionHeartbeatRequest({
+        id: this.currentSessionID,
+      })
+      try {
+        await this.client.sendSessionHeartbeat(sendHeartbeatReq)
+      } catch (err) {
         if (err) {
           if (ConnectionClosedError.isError(err)) {
             /*
@@ -77,16 +93,16 @@ export default class SessionManager {
              * called again by way of a reset.
              */
             this.reset()
-            return
           }
           // Otherwise we want to continue in case it was just a blip
         }
-        if (worker) {
-          worker.postMessage(this.heartbeatIntervalMs)
-        } else {
-          setTimeout(() => doHeartbeat(), this.heartbeatIntervalMs)
-        }
-      })
+      }
+
+      if (worker) {
+        worker.postMessage(this.heartbeatIntervalMs)
+      } else {
+        setTimeout(() => doHeartbeat(), this.heartbeatIntervalMs)
+      }
     }
 
     /*
@@ -122,42 +138,45 @@ export default class SessionManager {
     try {
       const startSessionReq = new robotApi.StartSessionRequest()
       if (this.currentSessionID !== '') {
-        startSessionReq.setResume(this.currentSessionID)
+        startSessionReq.resume = this.currentSessionID
       }
-      this.client.startSession(startSessionReq, new grpc.Metadata(), (err, resp) => {
-        if (err) {
-          if ((err as ServiceError).code === grpc.Code.Unimplemented) {
-            console.error('sessions unsupported; will not try again')
-            this.sessionsSupported = false
-            this.startResolve?.()
-            return
-          }
+      let resp: robotApi.StartSessionResponse | undefined
+      try {
+        resp = await this.client.startSession(startSessionReq)
+      } catch (error) {
+        const err = error as ConnectError
+        if (err.code === Code.Unimplemented) {
+          console.error('sessions unsupported; will not try again')
+          this.sessionsSupported = false
+          this.startResolve?.()
+        } else {
           this.startReject?.(err)
-          return
         }
-        if (!resp) {
-          this.startReject?.({
-            code: grpc.Code.Internal,
-            message: 'expected response to start session',
-            metadata: new grpc.Metadata(),
-          })
-          return
-        }
-        const heartbeatWindow = resp.getHeartbeatWindow()
-        if (!heartbeatWindow) {
-          this.startReject?.({
-            code: grpc.Code.Internal,
-            message: 'expected heartbeat window in response to start session',
-            metadata: new grpc.Metadata(),
-          })
-          return
-        }
-        this.sessionsSupported = true
-        this.currentSessionID = resp.getId()
-        this.heartbeatIntervalMs = ((heartbeatWindow.getSeconds() * 1e3) + (heartbeatWindow.getNanos() / 1e6)) / 5
-        this.startResolve?.()
-        this.heartbeat()
-      })
+      }
+
+      if (!resp) {
+        this.startReject?.(new ConnectError('expected response to start session', Code.Internal))
+        // TODO: this isn't right - it just satisfies the return type of this function
+        return new grpc.Metadata()
+      }
+
+      const heartbeatWindow = resp.heartbeatWindow
+      if (!heartbeatWindow) {
+        this.startReject?.(new ConnectError(
+          'expected heartbeat window in response to start session',
+          Code.Internal
+        ))
+        // TODO: this isn't right - it just satisfies the return type of this function
+        return new grpc.Metadata()
+      }
+
+      this.sessionsSupported = true
+      this.currentSessionID = resp.id
+      this.heartbeatIntervalMs =
+        (heartbeatWindow.seconds * 1e3 + heartbeatWindow.nanos / 1e6) / 5
+      this.startResolve?.()
+      this.heartbeat()
+
       await this.starting
       return this.getSessionMetadataInner()
     } finally {

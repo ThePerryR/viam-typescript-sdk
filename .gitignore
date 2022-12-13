@@ -105,7 +105,6 @@ dist
 
 # Generated protobufs
 src/gen/
-src/gen_es/
 
 # project bin
 bin/
