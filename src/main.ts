@@ -1,5 +1,6 @@
 import * as Camera from './components/camera/Camera'
 import { CameraClient } from './components/camera/Client'
+import { CameraClientES } from './components/camera/ClientES'
 import Client from './Client'
 
 import armApi from './gen/component/arm/v1/arm_pb.esm'
@@ -44,6 +45,7 @@ export {
   streamApi,
   Camera,
   CameraClient,
+  CameraClientES,
   Client
 }
 

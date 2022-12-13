@@ -1,6 +1,6 @@
 {
   "name": "@viamrobotics/sdk",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "",
   "main": "./dist/main.umd.js",
   "module": "./dist/main.es.js",
@@ -36,9 +36,12 @@
   },
   "homepage": "https://github.com/viamrobotics/viam-typescript-sdk#readme",
   "dependencies": {
+    "@bufbuild/connect-web": "^0.3.3",
     "@viamrobotics/rpc": "^0.1.32"
   },
   "devDependencies": {
+    "@bufbuild/protoc-gen-connect-web": "^0.3.3",
+    "@bufbuild/protoc-gen-es": "^0.4.0",
     "@improbable-eng/grpc-web": "^0.15.0",
     "@rollup/plugin-alias": "^4.0.2",
     "@rollup/plugin-commonjs": "^23.0.2",

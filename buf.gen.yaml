@@ -13,3 +13,9 @@ plugins:
     out: src/gen
     opt:
       - service=grpc-web
+  - name: es
+    out: src/gen_es
+    opt: target=ts
+  - name: connect-web
+    out: src/gen_es
+    opt: target=ts

@@ -237,6 +237,17 @@ export default class Client {
     return new SC(this.serviceHost, grpcOptions)
   }
 
+  get host () {
+    const clientTransportFactory = this.sessionOptions?.disabled
+      ? this.transportFactory
+      : this.sessionManager.transportFactory
+
+    if (!clientTransportFactory) {
+      throw new Error(Client.notConnectedYetStr)
+    }
+    return this.serviceHost
+  }
+
   public async disconnect () {
     while (this.connecting) {
       // eslint-disable-next-line no-await-in-loop
