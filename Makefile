@@ -3,6 +3,12 @@ BUF_TARGET?=buf.build/viamrobotics/api --path common,component,robot,service
 NPM_BIN="`pwd`/node_modules/.bin"
 PATH_WITH_TOOLS="${BUF_BIN}:${NPM_BIN}:${PATH}"
 
+clean-buf:
+	rm -rf src/gen/
+
+clean-dist:
+	rm -rf dist
+
 install:
 	npm ci --audit=false
 
@@ -11,7 +17,7 @@ lint: install
 	npm run typecheck
 	npm run check
 
-install-buf:
+install-buf: clean-buf
 	./etc/install_buf.sh $(BUF_BIN)
 
 buf: install install-buf
@@ -20,7 +26,7 @@ buf: install install-buf
 	PATH=$(PATH_WITH_TOOLS) buf generate buf.build/erdaniels/gostream
 	PATH=$(PATH_WITH_TOOLS) buf generate buf.build/viamrobotics/goutils
 
-build: buf
+build: clean-dist buf
 	# TODO(RSDK-870): try removing the custom `--max-old-space-size` option
 	# once we migrate to protobuf-es, since that generator should produce
 	# much smaller javascript bundles.
