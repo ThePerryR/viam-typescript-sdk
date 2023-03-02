@@ -30,7 +30,7 @@ import slamApi from './gen/service/slam/v1/slam_pb.esm';
 import streamApi from './gen/proto/stream/v1/stream_pb.esm';
 import visionApi from './gen/service/vision/v1/vision_pb.esm';
 
-export { type Robot, RobotClient } from './components/robot';
+export { type Robot, RobotClient, createRobotClient } from './components/robot';
 export { type Arm, ArmClient } from './components/arm';
 export { BaseClient } from './components/base';
 export { BoardClient } from './components/board';
