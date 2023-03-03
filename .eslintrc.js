@@ -43,7 +43,7 @@ module.exports = {
     'func-names': 'off',
     'function-call-argument-newline': ['error', 'consistent'],
     'id-length': 'off',
-    'indent': ['error', 2],
+    // 'indent': ['error', 2],
     'init-declarations': 'off',
     'linebreak-style': ['error', 'unix'],
     'lines-around-comment': 'off',

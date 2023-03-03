@@ -11,16 +11,53 @@ import { RobotServiceClient } from '../../gen/robot/v1/robot_pb_service.esm';
 import { promisify } from '../../utils';
 import proto from '../../gen/robot/v1/robot_pb.esm';
 
+import { ArmClient } from '../arm';
+import { SensorClient } from '../sensor';
+
+type ResourceClient = ArmClient | SensorClient;
+
 /** A gRPC-web client for the Robot component. */
 export class RobotClient implements Robot {
+  private connection: Client;
   private client: RobotServiceClient;
 
   constructor(client: Client) {
+    this.connection = client;
     this.client = client.createServiceClient(RobotServiceClient);
   }
 
   private get robotService() {
     return this.client;
+  }
+
+  public async getClientByName(name: string): Promise<ResourceClient> {
+    const resources = await this.resourceNames();
+
+    let resourceType;
+    for (const resource of resources) {
+      if (resource.getSubtype()) {
+        resourceType = resource.getSubtype();
+        break;
+      }
+    }
+
+    if (!resourceType) {
+      throw new Error(`cannot find resource named "${name}"`);
+    }
+
+    let client;
+    switch (resourceType) {
+      case 'arm':
+        client = new ArmClient(this.connection, name);
+        break;
+      case 'sensor':
+        client = new SensorClient(this.connection, name);
+        break;
+      default:
+        throw new Error(`could not create client for resource named "${name}"`);
+    }
+
+    return client;
   }
 
   // OPERATIONS
