@@ -26,7 +26,6 @@ const mockHealthyHeartbeat = (_req, _md, cb) => {
 describe('SessionManager', () => {
   beforeEach(() => {
     sm = new SessionManager(host, transport);
-    vi.mock('./gen/robot/v1/robot_pb_service');
   });
 
   afterEach(() => {
